@@ -1,0 +1,56 @@
+﻿+ SHOW ALL info table of vacumn : SELECT * FROM pg_stat_user_tables;
+
+
+- CREATE EXTENSION pageinspect;
+
+- query select data on page : SELECT * FROM heap_page_items(get_raw_page('table1',0));
+
+
+xem dữ liệu phân mảnh của table : CREATE EXTENSION pgstattuple;
+-SELECT *
+-FROM pgstattuple('nametable')
+
+
+- Công thức tính autovacumn run
++ VACUUM
+Bảng sẽ tự động được VACUUM khi số lượng dòng bị xoá hoặc update lớn hơn autovacuum_vacuum_scale_factor * tổng số lượng dòng + autovacuum_vacuum_threshold
+
++ ANALYZE
+Bảng sẽ tự động được ANALYZE khi số lượng dòng bị xoá hoặc update lớn hơn autovacuum_analyze_scale_factor * tổng số lượng dòng + autovacuum_analyze_threshold
+
+
+
++ lý thuyết 2 file phân tích của vacumn 
+Free Space Map(FSM): Mỗi bảng dữ liệu (hoặc index) tồn tại tương ứng một FSM. 
+FSM chứa thông tin các vị trí trống trong file dữ liệu. Khi dữ liệu mới được ghi PostgreSQL sẽ nhìn vị trí trống từ FSM trước, 
+việc này giảm thiểu truy cập trực tiếp (sinh I/O disk) vào file dữ liệu. File FSM nằm cùng vị trí với file dữ liệu và có tên = file_dữ_liệu_fsm (như ví dụ dưới).
+Visibility Map(VM): Mỗi bảng dữ liệu tồn tại tương ứng một visibility map (VM).
+ Một block dữ liệu tương ứng với 1 bit trên VM. VACUUM xem trước thông tin VM của bảng dữ liệu, và chỉ thực hiện trên những block cần được VACUUM. 
+ File VM nằm cùng vị trí với file dữ liệu và có tên = file_dữ_liệu_vm (như ví dụ dưới).
+ 
+ 
+ 
+ + câu query demo
+	- tạo table :
+				CREATE TABLE table1
+				(
+				  id serial NOT NULL,
+				  name1 character varying(50),
+				  value1 text,
+				  number1 text,
+				  CONSTRAINT table1_pkey PRIMARY KEY (id)
+				)
+	- insert data :
+				INSERT into table1 VALUES (generate_series(1,240),'data demo1', 'data demo2','data demo3');
+	- delete data :
+				DELETE FROM table1 where id <=120
+	- update data :
+				UPDATE table3 SET name1 = 'ABC'
+				WHERE id <= 240 
+ 
+ 
+ 
+ 
+ + link tham khảo
+ https://www.postgresql.vn/blog/taxonomy/term/51
+ https://pgtune.leopard.in.ua/#/
